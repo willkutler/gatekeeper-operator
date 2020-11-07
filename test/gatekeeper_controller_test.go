@@ -52,11 +52,11 @@ var _ = Describe("Gatekeeper", func() {
 		Context("Creating Gatekeeper custom resource", func() {
 			It("Should install Gatekeeper", func() {
 				ctx := context.Background()
+				gatekeeper := &v1alpha1.Gatekeeper{}
+				gatekeeper.Namespace = "gatekeeper-system"
+				err := sampleGatekeeper(gatekeeper)
+				Expect(err).ToNot(HaveOccurred())
 				By("Creating Gatekeeper resource", func() {
-					gatekeeper := &v1alpha1.Gatekeeper{}
-					gatekeeper.Namespace = "gatekeeper-system"
-					err := sampleGatekeeper(gatekeeper)
-					Expect(err).ToNot(HaveOccurred())
 					Expect(K8sClient.Create(ctx, gatekeeper)).Should(Succeed())
 				})
 				By("Checking gatekeeper-controller-manager readiness", func() {
@@ -76,7 +76,7 @@ var _ = Describe("Gatekeeper", func() {
 							return false, err
 						}
 
-						return gkDeployment.Status.ReadyReplicas >= 3, nil
+						return int64(gkDeployment.Status.ReadyReplicas) == *gatekeeper.Spec.Webhook.Replicas, nil
 					})
 					Expect(err).ToNot(HaveOccurred())
 				})
@@ -97,7 +97,7 @@ var _ = Describe("Gatekeeper", func() {
 							return false, err
 						}
 
-						return gkDeployment.Status.ReadyReplicas >= 1, nil
+						return int64(gkDeployment.Status.ReadyReplicas) == *gatekeeper.Spec.Audit.Replicas, nil
 					})
 					Expect(err).ToNot(HaveOccurred())
 				})
