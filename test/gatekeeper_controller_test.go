@@ -103,18 +103,6 @@ var _ = Describe("Gatekeeper", func() {
 				})
 			})
 		})
-		Context("Creating Gatekeeper policy to deny images with invalid registry", func() {
-			It("Should deny creation of Pod with invalid image registry", func() {
-				By("Creating Constraint Template for invalid container registry", func() {
-				})
-				By("Creating Constraint with list of valid registry", func() {
-				})
-				By("Creation of Pod with invalid image registry", func() {
-				})
-			})
-		})
-	})
-	Describe("Update", func() {
 	})
 })
 
