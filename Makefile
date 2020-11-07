@@ -62,6 +62,7 @@ test: generate fmt vet manifests
 .PHONY: test-e2e
 test-e2e: generate fmt vet
 	GOFLAGS=$(GOFLAGS) USE_EXISTING_CLUSTER=true go test -v ./test -coverprofile cover.out -race -args -ginkgo.v -ginkgo.trace
+	bats -t test/bats/test.bats
 
 # Build manager binary
 .PHONY: manager
