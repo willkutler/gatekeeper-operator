@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/RHsyseng/operator-utils/pkg/utils/openshift"
 	"github.com/go-logr/logr"
 	"github.com/openshift/library-go/pkg/manifest"
 	"github.com/pkg/errors"
@@ -37,6 +38,8 @@ import (
 	operatorv1alpha1 "github.com/font/gatekeeper-operator/api/v1alpha1"
 	"github.com/font/gatekeeper-operator/controllers/merge"
 	"github.com/font/gatekeeper-operator/pkg/bindata"
+
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var (
@@ -104,6 +107,18 @@ func (r *GatekeeperReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	ctx := context.Background()
 	logger := r.Log.WithValues("gatekeeper", req.NamespacedName)
 	logger.Info("Reconciling Gatekeeper")
+
+	cfg, configErr := config.GetConfig()
+	if configErr != nil {
+		return ctrl.Result{}, configErr
+	}
+	isOS, IOSerr := openshift.IsOpenShift(cfg)
+	if IOSerr != nil {
+		return ctrl.Result{}, IOSerr
+	}
+
+	fmt.Println("---------- is openshift?? --------------")
+	fmt.Println(isOS)
 
 	if req.Name != defaultGatekeeperCrName {
 		err := fmt.Errorf("Gatekeeper resource name must be '%s'", defaultGatekeeperCrName)
