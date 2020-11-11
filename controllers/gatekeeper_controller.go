@@ -45,6 +45,8 @@ import (
 var (
 	defaultGatekeeperCrName = "gatekeeper"
 	staticAssetsDir         = "config/gatekeeper/"
+	openshiftAssetsDir      = "openshift/"
+	vanillaAssetsDir        = "vanilla/"
 	auditFile               = "apps_v1_deployment_gatekeeper-audit.yaml"
 	webhookFile             = "apps_v1_deployment_gatekeeper-controller-manager.yaml"
 	orderedStaticAssets     = []string{
@@ -56,7 +58,6 @@ var (
 		"~g_v1_serviceaccount_gatekeeper-admin.yaml",
 		"rbac.authorization.k8s.io_v1_clusterrole_gatekeeper-manager-role.yaml",
 		"rbac.authorization.k8s.io_v1_clusterrolebinding_gatekeeper-manager-rolebinding.yaml",
-		"rbac.authorization.k8s.io_v1_role_gatekeeper-manager-role.yaml",
 		"rbac.authorization.k8s.io_v1_rolebinding_gatekeeper-manager-rolebinding.yaml",
 		auditFile,
 		webhookFile,
@@ -64,7 +65,10 @@ var (
 		"admissionregistration.k8s.io_v1beta1_validatingwebhookconfiguration_gatekeeper-validating-webhook-configuration.yaml",
 	}
 	openshiftAssets = []string{
-		"security.openshift.io_v1_scc.yaml",
+		"rbac.authorization.k8s.io_v1_role_gatekeeper-manager-role.yaml",
+	}
+	vanillaAssets = []string{
+		"rbac.authorization.k8s.io_v1_role_gatekeeper-manager-role.yaml",
 	}
 )
 
@@ -188,8 +192,28 @@ func (r *GatekeeperReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *GatekeeperReconciler) deployGatekeeperResources(gatekeeper *operatorv1alpha1.Gatekeeper, isOpenshift bool) error {
+	fmt.Println("_--------- IN DEPLOY RESOURCES ---------------")
 	if isOpenshift {
-		for _, a := range openshiftAssets {
+		fmt.Println("--=------- OPENSHIFT DETECTED -------------")
+		for _, asset := range openshiftAssets {
+			a := fmt.Sprintf("%s%s", openshiftAssetsDir, asset)
+			fmt.Println("-----------asset-------------------")
+			fmt.Println(a)
+			manifest, err := getManifest(a)
+			if err != nil {
+				return err
+			}
+			if err = crOverrides(gatekeeper, a, manifest); err != nil {
+				return err
+			}
+
+			if err = r.updateOrCreateResource(manifest, gatekeeper); err != nil {
+				return err
+			}
+		}
+	} else {
+		for _, asset := range vanillaAssets {
+			a := vanillaAssetsDir + asset
 			manifest, err := getManifest(a)
 			if err != nil {
 				return err
