@@ -192,13 +192,9 @@ func (r *GatekeeperReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *GatekeeperReconciler) deployGatekeeperResources(gatekeeper *operatorv1alpha1.Gatekeeper, isOpenshift bool) error {
-	fmt.Println("_--------- IN DEPLOY RESOURCES ---------------")
 	if isOpenshift {
-		fmt.Println("--=------- OPENSHIFT DETECTED -------------")
 		for _, asset := range openshiftAssets {
 			a := fmt.Sprintf("%s%s", openshiftAssetsDir, asset)
-			fmt.Println("-----------asset-------------------")
-			fmt.Println(a)
 			manifest, err := getManifest(a)
 			if err != nil {
 				return err
