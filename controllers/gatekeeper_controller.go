@@ -63,6 +63,9 @@ var (
 		"~g_v1_service_gatekeeper-webhook-service.yaml",
 		"admissionregistration.k8s.io_v1beta1_validatingwebhookconfiguration_gatekeeper-validating-webhook-configuration.yaml",
 	}
+	openshiftAssets = []string{
+		"scc.yaml",
+	}
 )
 
 const (
@@ -112,13 +115,10 @@ func (r *GatekeeperReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	if configErr != nil {
 		return ctrl.Result{}, configErr
 	}
-	isOS, IOSerr := openshift.IsOpenShift(cfg)
+	isOpenshift, IOSerr := openshift.IsOpenShift(cfg)
 	if IOSerr != nil {
 		return ctrl.Result{}, IOSerr
 	}
-
-	fmt.Println("---------- is openshift?? --------------")
-	fmt.Println(isOS)
 
 	if req.Name != defaultGatekeeperCrName {
 		err := fmt.Errorf("Gatekeeper resource name must be '%s'", defaultGatekeeperCrName)
@@ -161,7 +161,7 @@ func (r *GatekeeperReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		}
 	}
 
-	err = r.deployGatekeeperResources(gatekeeper)
+	err = r.deployGatekeeperResources(gatekeeper, isOpenshift)
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "Unable to deploy Gatekeeper resources")
 	}
@@ -187,7 +187,23 @@ func (r *GatekeeperReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *GatekeeperReconciler) deployGatekeeperResources(gatekeeper *operatorv1alpha1.Gatekeeper) error {
+func (r *GatekeeperReconciler) deployGatekeeperResources(gatekeeper *operatorv1alpha1.Gatekeeper, isOpenshift bool) error {
+	if isOpenshift {
+		for _, a := range openshiftAssets {
+			fmt.Println(a)
+			manifest, err := getManifest(a)
+			if err != nil {
+				return err
+			}
+			if err = crOverrides(gatekeeper, a, manifest); err != nil {
+				return err
+			}
+
+			if err = r.updateOrCreateResource(manifest, gatekeeper); err != nil {
+				return err
+			}
+		}
+	}
 	for _, a := range orderedStaticAssets {
 		manifest, err := getManifest(a)
 		if err != nil {
