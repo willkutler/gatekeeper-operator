@@ -64,7 +64,7 @@ var (
 		"admissionregistration.k8s.io_v1beta1_validatingwebhookconfiguration_gatekeeper-validating-webhook-configuration.yaml",
 	}
 	openshiftAssets = []string{
-		"scc.yaml",
+		"security.openshift.io_v1_scc.yaml",
 	}
 )
 
@@ -190,7 +190,6 @@ func (r *GatekeeperReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *GatekeeperReconciler) deployGatekeeperResources(gatekeeper *operatorv1alpha1.Gatekeeper, isOpenshift bool) error {
 	if isOpenshift {
 		for _, a := range openshiftAssets {
-			fmt.Println(a)
 			manifest, err := getManifest(a)
 			if err != nil {
 				return err

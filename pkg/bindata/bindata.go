@@ -11,6 +11,7 @@
 // config/gatekeeper/rbac.authorization.k8s.io_v1_clusterrolebinding_gatekeeper-manager-rolebinding.yaml
 // config/gatekeeper/rbac.authorization.k8s.io_v1_role_gatekeeper-manager-role.yaml
 // config/gatekeeper/rbac.authorization.k8s.io_v1_rolebinding_gatekeeper-manager-rolebinding.yaml
+// config/gatekeeper/security.openshift.io_v1_scc.yaml
 // config/gatekeeper/~g_v1_secret_gatekeeper-webhook-server-cert.yaml
 // config/gatekeeper/~g_v1_service_gatekeeper-webhook-service.yaml
 // config/gatekeeper/~g_v1_serviceaccount_gatekeeper-admin.yaml
@@ -1027,6 +1028,57 @@ func configGatekeeperRbacAuthorizationK8sIo_v1_rolebinding_gatekeeperManagerRole
 	return a, nil
 }
 
+var _configGatekeeperSecurityOpenshiftIo_v1_sccYaml = []byte(`allowHostPorts: true
+priority: 1
+requiredDropCapabilities: []
+allowPrivilegedContainer: true
+runAsUser:
+  type: RunAsAny
+users:
+  - 'system:serviceaccount:gatekeeper-system:gatekeeper-admin'
+allowHostDirVolumePlugin: true
+seccompProfiles:
+  - '*'
+allowHostIPC: true
+seLinuxContext:
+  type: RunAsAny
+readOnlyRootFilesystem: false
+metadata:
+  generation: 2
+  name: gatekeeper-scc
+fsGroup:
+  type: RunAsAny
+groups: []
+kind: SecurityContextConstraints
+defaultAddCapabilities: []
+allowedUnsafeSysctls:
+  - '*'
+supplementalGroups:
+  type: RunAsAny
+volumes:
+  - '*'
+allowHostPID: true
+allowHostNetwork: true
+allowPrivilegeEscalation: true
+apiVersion: security.openshift.io/v1
+allowedCapabilities:
+  - '*'`)
+
+func configGatekeeperSecurityOpenshiftIo_v1_sccYamlBytes() ([]byte, error) {
+	return _configGatekeeperSecurityOpenshiftIo_v1_sccYaml, nil
+}
+
+func configGatekeeperSecurityOpenshiftIo_v1_sccYaml() (*asset, error) {
+	bytes, err := configGatekeeperSecurityOpenshiftIo_v1_sccYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "config/gatekeeper/security.openshift.io_v1_scc.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _configGatekeeperG_v1_secret_gatekeeperWebhookServerCertYaml = []byte(`apiVersion: v1
 kind: Secret
 metadata:
@@ -1170,6 +1222,7 @@ var _bindata = map[string]func() (*asset, error){
 	"config/gatekeeper/rbac.authorization.k8s.io_v1_clusterrolebinding_gatekeeper-manager-rolebinding.yaml":                                  configGatekeeperRbacAuthorizationK8sIo_v1_clusterrolebinding_gatekeeperManagerRolebindingYaml,
 	"config/gatekeeper/rbac.authorization.k8s.io_v1_role_gatekeeper-manager-role.yaml":                                                       configGatekeeperRbacAuthorizationK8sIo_v1_role_gatekeeperManagerRoleYaml,
 	"config/gatekeeper/rbac.authorization.k8s.io_v1_rolebinding_gatekeeper-manager-rolebinding.yaml":                                         configGatekeeperRbacAuthorizationK8sIo_v1_rolebinding_gatekeeperManagerRolebindingYaml,
+	"config/gatekeeper/security.openshift.io_v1_scc.yaml":                                                                                    configGatekeeperSecurityOpenshiftIo_v1_sccYaml,
 	"config/gatekeeper/~g_v1_secret_gatekeeper-webhook-server-cert.yaml":                                                                     configGatekeeperG_v1_secret_gatekeeperWebhookServerCertYaml,
 	"config/gatekeeper/~g_v1_service_gatekeeper-webhook-service.yaml":                                                                        configGatekeeperG_v1_service_gatekeeperWebhookServiceYaml,
 	"config/gatekeeper/~g_v1_serviceaccount_gatekeeper-admin.yaml":                                                                           configGatekeeperG_v1_serviceaccount_gatekeeperAdminYaml,
@@ -1229,6 +1282,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"rbac.authorization.k8s.io_v1_clusterrolebinding_gatekeeper-manager-rolebinding.yaml":                                  {configGatekeeperRbacAuthorizationK8sIo_v1_clusterrolebinding_gatekeeperManagerRolebindingYaml, map[string]*bintree{}},
 			"rbac.authorization.k8s.io_v1_role_gatekeeper-manager-role.yaml":                                                       {configGatekeeperRbacAuthorizationK8sIo_v1_role_gatekeeperManagerRoleYaml, map[string]*bintree{}},
 			"rbac.authorization.k8s.io_v1_rolebinding_gatekeeper-manager-rolebinding.yaml":                                         {configGatekeeperRbacAuthorizationK8sIo_v1_rolebinding_gatekeeperManagerRolebindingYaml, map[string]*bintree{}},
+			"security.openshift.io_v1_scc.yaml":                                                                                    {configGatekeeperSecurityOpenshiftIo_v1_sccYaml, map[string]*bintree{}},
 			"~g_v1_secret_gatekeeper-webhook-server-cert.yaml":                                                                     {configGatekeeperG_v1_secret_gatekeeperWebhookServerCertYaml, map[string]*bintree{}},
 			"~g_v1_service_gatekeeper-webhook-service.yaml":                                                                        {configGatekeeperG_v1_service_gatekeeperWebhookServiceYaml, map[string]*bintree{}},
 			"~g_v1_serviceaccount_gatekeeper-admin.yaml":                                                                           {configGatekeeperG_v1_serviceaccount_gatekeeperAdminYaml, map[string]*bintree{}},
