@@ -117,6 +117,7 @@ type GatekeeperReconciler struct {
 // +kubebuilder:rbac:groups=templates.gatekeeper.sh,resources=constrainttemplates/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=use
 
 // Namespace Scoped
 // +kubebuilder:rbac:groups=core,namespace="system",resources=secrets;serviceaccounts;services,verbs=get;list;watch;create;update;patch;delete
@@ -206,7 +207,7 @@ func (r *GatekeeperReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *GatekeeperReconciler) deployGatekeeperResources(gatekeeper *operatorv1alpha1.Gatekeeper, platformName string) error {
 	for _, a := range getStaticAssets(gatekeeper) {
-		if a == RoleFile && platformName == "OpenShift" {
+		if (a == RoleFile || a == AuditFile || a == WebhookFile) && platformName == "OpenShift" {
 			a = openshiftAssetsDir + a
 		}
 		manifest, err := util.GetManifest(a)
