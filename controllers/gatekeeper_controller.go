@@ -117,7 +117,6 @@ type GatekeeperReconciler struct {
 // +kubebuilder:rbac:groups=templates.gatekeeper.sh,resources=constrainttemplates/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=use
 
 // Namespace Scoped
 // +kubebuilder:rbac:groups=core,namespace="system",resources=secrets;serviceaccounts;services,verbs=get;list;watch;create;update;patch;delete
@@ -207,14 +206,14 @@ func (r *GatekeeperReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *GatekeeperReconciler) deployGatekeeperResources(gatekeeper *operatorv1alpha1.Gatekeeper, platformName string) error {
 	for _, a := range getStaticAssets(gatekeeper) {
-		if (a == RoleFile || a == AuditFile || a == WebhookFile) && platformName == "OpenShift" {
+		if a == RoleFile && platformName == "OpenShift" {
 			a = openshiftAssetsDir + a
 		}
 		manifest, err := util.GetManifest(a)
 		if err != nil {
 			return err
 		}
-		if err = crOverrides(gatekeeper, a, manifest); err != nil {
+		if err = crOverrides(gatekeeper, a, manifest, (platformName == "OpenShift")); err != nil {
 			return err
 		}
 
@@ -339,7 +338,7 @@ var commonContainerOverridesFn = []func(map[string]interface{}, operatorv1alpha1
 }
 
 // crOverrides
-func crOverrides(gatekeeper *operatorv1alpha1.Gatekeeper, asset string, manifest *manifest.Manifest) error {
+func crOverrides(gatekeeper *operatorv1alpha1.Gatekeeper, asset string, manifest *manifest.Manifest, isOpenshift bool) error {
 	// set current namespace
 	if err := setCurrentNamespace(manifest.Obj, asset, gatekeeper.Namespace); err != nil {
 		return err
@@ -352,6 +351,11 @@ func crOverrides(gatekeeper *operatorv1alpha1.Gatekeeper, asset string, manifest
 		if err := auditOverrides(manifest.Obj, gatekeeper.Spec.Audit); err != nil {
 			return err
 		}
+		if isOpenshift {
+			if err := removeAnnotations(manifest.Obj); err != nil {
+				return err
+			}
+		}
 	}
 	// webhook overrides
 	if asset == WebhookFile {
@@ -360,6 +364,11 @@ func crOverrides(gatekeeper *operatorv1alpha1.Gatekeeper, asset string, manifest
 		}
 		if err := webhookOverrides(manifest.Obj, gatekeeper.Spec.Webhook); err != nil {
 			return err
+		}
+		if isOpenshift {
+			if err := removeAnnotations(manifest.Obj); err != nil {
+				return err
+			}
 		}
 	}
 	// ValidatingWebhookConfiguration overrides
@@ -455,6 +464,13 @@ func setReplicas(obj *unstructured.Unstructured, replicas *int32) error {
 		if err := unstructured.SetNestedField(obj.Object, int64(*replicas), "spec", "replicas"); err != nil {
 			return errors.Wrapf(err, "Failed to set replica value")
 		}
+	}
+	return nil
+}
+
+func removeAnnotations(obj *unstructured.Unstructured) error {
+	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "metadata", "annotations"); err != nil {
+		return errors.Wrapf(err, "Failed to remove annotations")
 	}
 	return nil
 }

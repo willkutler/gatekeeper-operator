@@ -7,8 +7,6 @@
 // config/gatekeeper/apiextensions.k8s.io_v1beta1_customresourcedefinition_constrainttemplates.templates.gatekeeper.sh.yaml
 // config/gatekeeper/apps_v1_deployment_gatekeeper-audit.yaml
 // config/gatekeeper/apps_v1_deployment_gatekeeper-controller-manager.yaml
-// config/gatekeeper/openshift/apps_v1_deployment_gatekeeper-audit.yaml
-// config/gatekeeper/openshift/apps_v1_deployment_gatekeeper-controller-manager.yaml
 // config/gatekeeper/openshift/rbac.authorization.k8s.io_v1_role_gatekeeper-manager-role.yaml
 // config/gatekeeper/policy_v1beta1_podsecuritypolicy_gatekeeper-admin.yaml
 // config/gatekeeper/rbac.authorization.k8s.io_v1_clusterrole_gatekeeper-manager-role.yaml
@@ -785,219 +783,6 @@ func configGatekeeperApps_v1_deployment_gatekeeperControllerManagerYaml() (*asse
 	return a, nil
 }
 
-var _configGatekeeperOpenshiftApps_v1_deployment_gatekeeperAuditYaml = []byte(`apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    control-plane: controller-manager
-    gatekeeper.sh/operation: audit
-    gatekeeper.sh/system: "yes"
-  name: gatekeeper-audit
-  namespace: gatekeeper-system
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      control-plane: audit-controller
-      gatekeeper.sh/operation: audit
-      gatekeeper.sh/system: "yes"
-  template:
-    metadata:
-      labels:
-        control-plane: audit-controller
-        gatekeeper.sh/operation: audit
-        gatekeeper.sh/system: "yes"
-    spec:
-      containers:
-      - args:
-        - --operation=audit
-        - --operation=status
-        - --logtostderr
-        command:
-        - /manager
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.namespace
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        image: openpolicyagent/gatekeeper:v3.1.1
-        imagePullPolicy: Always
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 9090
-        name: manager
-        ports:
-        - containerPort: 8888
-          name: metrics
-          protocol: TCP
-        - containerPort: 9090
-          name: healthz
-          protocol: TCP
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 9090
-        resources:
-          limits:
-            cpu: 1000m
-            memory: 512Mi
-          requests:
-            cpu: 100m
-            memory: 256Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - all
-          runAsGroup: 999
-          runAsNonRoot: true
-          runAsUser: 1000
-      nodeSelector:
-        kubernetes.io/os: linux
-      serviceAccountName: gatekeeper-admin
-      terminationGracePeriodSeconds: 60
-`)
-
-func configGatekeeperOpenshiftApps_v1_deployment_gatekeeperAuditYamlBytes() ([]byte, error) {
-	return _configGatekeeperOpenshiftApps_v1_deployment_gatekeeperAuditYaml, nil
-}
-
-func configGatekeeperOpenshiftApps_v1_deployment_gatekeeperAuditYaml() (*asset, error) {
-	bytes, err := configGatekeeperOpenshiftApps_v1_deployment_gatekeeperAuditYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "config/gatekeeper/openshift/apps_v1_deployment_gatekeeper-audit.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _configGatekeeperOpenshiftApps_v1_deployment_gatekeeperControllerManagerYaml = []byte(`apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    control-plane: controller-manager
-    gatekeeper.sh/operation: webhook
-    gatekeeper.sh/system: "yes"
-  name: gatekeeper-controller-manager
-  namespace: gatekeeper-system
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      control-plane: controller-manager
-      gatekeeper.sh/operation: webhook
-      gatekeeper.sh/system: "yes"
-  template:
-    metadata:
-      labels:
-        control-plane: controller-manager
-        gatekeeper.sh/operation: webhook
-        gatekeeper.sh/system: "yes"
-    spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: gatekeeper.sh/operation
-                  operator: In
-                  values:
-                  - webhook
-              topologyKey: kubernetes.io/hostname
-            weight: 100
-      containers:
-      - args:
-        - --port=8443
-        - --logtostderr
-        - --exempt-namespace=gatekeeper-system
-        - --operation=webhook
-        command:
-        - /manager
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.namespace
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        image: openpolicyagent/gatekeeper:v3.1.1
-        imagePullPolicy: Always
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 9090
-        name: manager
-        ports:
-        - containerPort: 8443
-          name: webhook-server
-          protocol: TCP
-        - containerPort: 8888
-          name: metrics
-          protocol: TCP
-        - containerPort: 9090
-          name: healthz
-          protocol: TCP
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 9090
-        resources:
-          limits:
-            cpu: 1000m
-            memory: 512Mi
-          requests:
-            cpu: 100m
-            memory: 256Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - all
-          runAsGroup: 999
-          runAsNonRoot: true
-          runAsUser: 1000
-        volumeMounts:
-        - mountPath: /certs
-          name: cert
-          readOnly: true
-      nodeSelector:
-        kubernetes.io/os: linux
-      serviceAccountName: gatekeeper-admin
-      terminationGracePeriodSeconds: 60
-      volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: gatekeeper-webhook-server-cert
-`)
-
-func configGatekeeperOpenshiftApps_v1_deployment_gatekeeperControllerManagerYamlBytes() ([]byte, error) {
-	return _configGatekeeperOpenshiftApps_v1_deployment_gatekeeperControllerManagerYaml, nil
-}
-
-func configGatekeeperOpenshiftApps_v1_deployment_gatekeeperControllerManagerYaml() (*asset, error) {
-	bytes, err := configGatekeeperOpenshiftApps_v1_deployment_gatekeeperControllerManagerYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "config/gatekeeper/openshift/apps_v1_deployment_gatekeeper-controller-manager.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
 var _configGatekeeperOpenshiftRbacAuthorizationK8sIo_v1_role_gatekeeperManagerRoleYaml = []byte(`apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -1486,8 +1271,6 @@ var _bindata = map[string]func() (*asset, error){
 	"config/gatekeeper/apiextensions.k8s.io_v1beta1_customresourcedefinition_constrainttemplates.templates.gatekeeper.sh.yaml":               configGatekeeperApiextensionsK8sIo_v1beta1_customresourcedefinition_constrainttemplatesTemplatesGatekeeperShYaml,
 	"config/gatekeeper/apps_v1_deployment_gatekeeper-audit.yaml":                                                                             configGatekeeperApps_v1_deployment_gatekeeperAuditYaml,
 	"config/gatekeeper/apps_v1_deployment_gatekeeper-controller-manager.yaml":                                                                configGatekeeperApps_v1_deployment_gatekeeperControllerManagerYaml,
-	"config/gatekeeper/openshift/apps_v1_deployment_gatekeeper-audit.yaml":                                                                   configGatekeeperOpenshiftApps_v1_deployment_gatekeeperAuditYaml,
-	"config/gatekeeper/openshift/apps_v1_deployment_gatekeeper-controller-manager.yaml":                                                      configGatekeeperOpenshiftApps_v1_deployment_gatekeeperControllerManagerYaml,
 	"config/gatekeeper/openshift/rbac.authorization.k8s.io_v1_role_gatekeeper-manager-role.yaml":                                             configGatekeeperOpenshiftRbacAuthorizationK8sIo_v1_role_gatekeeperManagerRoleYaml,
 	"config/gatekeeper/policy_v1beta1_podsecuritypolicy_gatekeeper-admin.yaml":                                                               configGatekeeperPolicy_v1beta1_podsecuritypolicy_gatekeeperAdminYaml,
 	"config/gatekeeper/rbac.authorization.k8s.io_v1_clusterrole_gatekeeper-manager-role.yaml":                                                configGatekeeperRbacAuthorizationK8sIo_v1_clusterrole_gatekeeperManagerRoleYaml,
@@ -1550,8 +1333,6 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"apps_v1_deployment_gatekeeper-audit.yaml":                                                                             {configGatekeeperApps_v1_deployment_gatekeeperAuditYaml, map[string]*bintree{}},
 			"apps_v1_deployment_gatekeeper-controller-manager.yaml":                                                                {configGatekeeperApps_v1_deployment_gatekeeperControllerManagerYaml, map[string]*bintree{}},
 			"openshift": {nil, map[string]*bintree{
-				"apps_v1_deployment_gatekeeper-audit.yaml":                       {configGatekeeperOpenshiftApps_v1_deployment_gatekeeperAuditYaml, map[string]*bintree{}},
-				"apps_v1_deployment_gatekeeper-controller-manager.yaml":          {configGatekeeperOpenshiftApps_v1_deployment_gatekeeperControllerManagerYaml, map[string]*bintree{}},
 				"rbac.authorization.k8s.io_v1_role_gatekeeper-manager-role.yaml": {configGatekeeperOpenshiftRbacAuthorizationK8sIo_v1_role_gatekeeperManagerRoleYaml, map[string]*bintree{}},
 			}},
 			"policy_v1beta1_podsecuritypolicy_gatekeeper-admin.yaml":                              {configGatekeeperPolicy_v1beta1_podsecuritypolicy_gatekeeperAdminYaml, map[string]*bintree{}},
