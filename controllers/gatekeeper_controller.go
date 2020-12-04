@@ -49,6 +49,8 @@ import (
 var (
 	defaultGatekeeperCrName        = "gatekeeper"
 	openshiftAssetsDir             = "openshift/"
+	OpenshiftClusterRoleFile       = "rbac.authorization.k8s.io_v1_clusterrole_gatekeeper-operator-openshift.yaml"
+	OpenshiftRoleBindingFile       = "rbac.authorization.k8s.io_v1_rolebinding_gatekeeper-operator-openshift-binding.yaml"
 	RoleFile                       = "rbac.authorization.k8s.io_v1_role_gatekeeper-manager-role.yaml"
 	AuditFile                      = "apps_v1_deployment_gatekeeper-audit.yaml"
 	WebhookFile                    = "apps_v1_deployment_gatekeeper-controller-manager.yaml"
@@ -63,6 +65,8 @@ var (
 		"v1_secret_gatekeeper-webhook-server-cert.yaml",
 		"v1_serviceaccount_gatekeeper-admin.yaml",
 		"policy_v1beta1_podsecuritypolicy_gatekeeper-admin.yaml",
+		OpenshiftClusterRoleFile,
+		OpenshiftRoleBindingFile,
 		"rbac.authorization.k8s.io_v1_clusterrole_gatekeeper-manager-role.yaml",
 		ClusterRoleBindingFile,
 		RoleFile,
@@ -206,8 +210,10 @@ func (r *GatekeeperReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *GatekeeperReconciler) deployGatekeeperResources(gatekeeper *operatorv1alpha1.Gatekeeper, platformName string) error {
 	for _, a := range getStaticAssets(gatekeeper) {
-		if a == RoleFile && platformName == "OpenShift" {
+		if (a == RoleFile || a == OpenshiftRoleBindingFile || a == OpenshiftClusterRoleFile) && platformName == "OpenShift" {
 			a = openshiftAssetsDir + a
+		} else if a == OpenshiftRoleBindingFile || a == OpenshiftClusterRoleFile {
+			continue
 		}
 		manifest, err := util.GetManifest(a)
 		if err != nil {
